@@ -54,5 +54,25 @@ namespace System2.DataStructures
 
             return null;
         }
+
+        public static IEnumerable<T> FindAllVertices<T>(
+            this T rootVertex,
+            Func<T, IEnumerable<T>> extractChildVertices,
+            Func<T, bool> predicate
+        )
+        {
+            if (rootVertex == null)
+                return Array.Empty<T>();
+
+            IEnumerable<T> matches = predicate(rootVertex)
+                ? new[] { rootVertex }
+                : Array.Empty<T>();
+            return matches.Concat(
+                extractChildVertices(rootVertex)
+                    .SelectMany(childNode =>
+                        childNode.FindAllVertices<T>(extractChildVertices, predicate)
+                    )
+            );
+        }
     }
 }
