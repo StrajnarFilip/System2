@@ -6,7 +6,7 @@ namespace System2.IO
 {
     public static class DirectoryExtensions
     {
-        public static DirectoryInfo FindDirectory(
+        public static DirectoryInfo[] FindDirectories(
             this DirectoryInfo searchingDirectory,
             Func<DirectoryInfo, bool> predicate
         )
@@ -16,7 +16,8 @@ namespace System2.IO
                 .Select(directoryName => new DirectoryInfo(
                     Path.Combine(searchingDirectory.FullName, directoryName)
                 ))
-                .First(predicate);
+                .Where(predicate)
+                .ToArray();
         }
 
         public static DirectoryInfo FindDirectoryByName(
@@ -25,11 +26,23 @@ namespace System2.IO
             bool caseSensitive = false
         )
         {
-            return searchingDirectory.FindDirectory(directory =>
+            return searchingDirectory.FindDirectories(directory =>
                 caseSensitive
                     ? directory.Name == directoryName
                     : directory.Name.ToLower().Equals(directoryName.ToLower())
-            );
+            )[0];
+        }
+
+        public static DirectoryInfo[] RecursiveSearchForDirectory(
+            this DirectoryInfo rootSearchDirectory,
+            Func<DirectoryInfo, bool> predicate
+        )
+        {
+            DirectoryInfo[] foundDirectories = rootSearchDirectory.FindDirectories(predicate);
+            return foundDirectories
+                .SelectMany(directory => directory.RecursiveSearchForDirectory(predicate))
+                .Concat(foundDirectories)
+                .ToArray();
         }
     }
 }
